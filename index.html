@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompteur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        textarea, input {
+            width: 80%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #prompteur {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            background-color: black;
+            color: white;
+            overflow-y: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        #content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        #prompteur p {
+            font-size: 24px;
+            line-height: 1.5;
+        }
+        #speed-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="editor" style="text-align: center; padding: 20px; max-width: 600px; margin: 0 auto;">
+        <h2 style="font-family: Arial, sans-serif; color: #333;">Prompteur - © BERQUIER Johan</h2>
+        <textarea id="text" placeholder="Entrez votre texte ici..." style="width: 100%; height: 150px; padding: 10px; border: 2px solid #ccc; border-radius: 8px; font-family: Arial, sans-serif; font-size: 16px; box-sizing: border-box;"></textarea>
+        <br>
+        <button onclick="startPrompteur()" style="margin-top: 10px; padding: 10px 20px; background-color: #c45736; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">Valider</button>
+    </div>
+    
+    
+    <div id="prompteur">
+        <div id="content"></div>
+        <div id="speed-indicator">Vitesse: 100%</div>
+    </div>
+
+    <script>
+        let fontSize = 24; // initial font size in pixels
+        let scrollPosition = 0;
+        let scrollInterval = null; // Variable to store the interval ID
+        let scrollStep = 2; // Adjust for smoother scrolling
+        let scrollSpeed = 10; // Initial scroll speed in ms
+        const minSpeed = 5; // Minimum speed in ms
+        const maxSpeed = 900; // Maximum speed in ms
+        const speedIndicator = document.getElementById('speed-indicator');
+        let speedTimeout = null; // Timeout to hide the speed indicator
+
+        function updateSpeedIndicator() {
+            const percentage = Math.round((100 * (maxSpeed - scrollSpeed)) / (maxSpeed - minSpeed));
+            speedIndicator.textContent = `Vitesse: ${percentage}%`;
+            speedIndicator.style.display = 'block';
+
+            // Clear any existing timeout and set a new one to hide the indicator
+            if (speedTimeout) clearTimeout(speedTimeout);
+            speedTimeout = setTimeout(() => {
+                speedIndicator.style.display = 'none';
+            }, 5000);
+        }
+
+        function startPrompteur() {
+            const text = document.getElementById('text').value;
+            if (!text.trim()) return alert('Veuillez entrer un texte.');
+
+            document.getElementById('editor').style.display = 'none';
+            const prompteur = document.getElementById('prompteur');
+            prompteur.style.display = 'block';
+
+            const content = document.getElementById('content');
+            content.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+            content.firstChild.style.fontSize = `${fontSize}px`;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            const content = document.getElementById('content');
+
+            if (key === 'ArrowUp') {
+                if (!scrollInterval) {  // Vérifie si l'intervalle n'est pas déjà actif
+                    scrollInterval = setInterval(() => {
+                        scrollPosition = Math.max(scrollPosition - scrollStep, 0);
+                        content.style.transform = `translateY(-${scrollPosition}px)`;
+                    }, scrollSpeed);
+                }
+            } else if (key === 'ArrowDown') {
+                if (!scrollInterval) {  // Vérifie si l'intervalle n'est pas déjà actif
+                    scrollInterval = setInterval(() => {
+                        scrollPosition += scrollStep;
+                        content.style.transform = `translateY(-${scrollPosition}px)`;
+                    }, scrollSpeed);
+                }
+            } else if (key === '+') {
+                fontSize += 2;
+                document.querySelector('#content p').style.fontSize = `${fontSize}px`;
+            } else if (key === '-') {
+                fontSize -= 2;
+                if (fontSize < 10) fontSize = 10;
+                document.querySelector('#content p').style.fontSize = `${fontSize}px`;
+            } else if (key === 'ArrowLeft') {
+                scrollSpeed = Math.min(scrollSpeed + 5, maxSpeed);
+                updateSpeedIndicator();
+            } else if (key === 'ArrowRight') {
+                scrollSpeed = Math.max(scrollSpeed - 5, minSpeed);
+                updateSpeedIndicator();
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                clearInterval(scrollInterval);
+                scrollInterval = null;  // Réinitialise l'intervalle après l'arrêt
+            }
+        });
+
+        updateSpeedIndicator();
+    </script>
+</body>
+</html>
